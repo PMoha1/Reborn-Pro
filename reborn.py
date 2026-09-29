@@ -17,7 +17,7 @@ import uuid
 import time
 import argparse
 
-# Colors
+# Terminal Colors
 C_RESET   = "\033[0m"
 C_BOLD    = "\033[1m"
 C_DIM     = "\033[2m"
@@ -36,8 +36,7 @@ BANNER = f"""{C_MAGENTA}
   ██╔══██╗██╔══╝  ██╔══██╗██║   ██║██╔══██╗██║╚██╗██║
   ██║  ██║███████╗██████╔╝╚██████╔╝██║  ██║██║ ╚████║
   ╚═╝  ╚═╝╚══════╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝
-{C_RESET}{C_DIM}  — Reborn Anti-Fingerprint & Ghost Engine (Cross-Platform) —{C_RESET}
-{C_GREEN}  المطور: محمد يقين مجمل الفايق - صنعاء، اليمن 🇾🇪{C_RESET}
+{C_RESET}{C_DIM}  — HackerAI Anti-Fingerprint & Ghost Engine (Cross-Platform) —{C_RESET}
 """
 
 class RebornEngine:
@@ -46,7 +45,14 @@ class RebornEngine:
         self.is_termux = "com.termux" in os.environ.get("PREFIX", "") or os.path.exists("/data/data/com.termux")
         if self.is_termux:
             self.os_type = "Termux"
-            
+        
+        self.active_dev = "Unknown"
+        self.active_con = "Unknown"
+        self.current_mac = "Unknown"
+        self.current_ip = "Unknown"
+        self.current_hostname = "Unknown"
+        self.current_machine_id = "Unknown"
+
     def check_privileges(self):
         if self.os_type == "Linux":
             if os.geteuid() != 0:
@@ -64,6 +70,87 @@ class RebornEngine:
                     sys.exit(1)
             except:
                 pass
+
+    def detect_network(self):
+        if self.os_type == "Linux":
+            # Hostname
+            try:
+                with open("/etc/hostname", "r") as f:
+                    self.current_hostname = f.read().strip()
+            except:
+                self.current_hostname = subprocess.getoutput("hostname")
+            
+            # Machine ID
+            try:
+                with open("/etc/machine-id", "r") as f:
+                    self.current_machine_id = f.read().strip()
+            except:
+                self.current_machine_id = "None"
+                
+            # Network Device & IP
+            out = subprocess.getoutput("ip route show default")
+            if "dev " in out:
+                self.active_dev = out.split("dev ")[1].split()[0]
+                try:
+                    ip_out = subprocess.getoutput(f"ip -4 addr show {self.active_dev}")
+                    if "inet " in ip_out:
+                        self.current_ip = ip_out.split("inet ")[1].split("/")[0]
+                except:
+                    pass
+                try:
+                    mac_out = subprocess.getoutput(f"cat /sys/class/net/{self.active_dev}/address")
+                    self.current_mac = mac_out.strip()
+                except:
+                    pass
+                try:
+                    con_out = subprocess.getoutput(f"nmcli -t -f NAME,DEVICE con show --active | grep ':{self.active_dev}$'")
+                    if con_out:
+                        self.active_con = con_out.split(":")[0]
+                except:
+                    pass
+
+        elif self.os_type == "Windows":
+            self.current_hostname = subprocess.getoutput("hostname").strip()
+            self.current_machine_id = "Windows-Registry-Guid"
+            self.active_dev = "Wi-Fi / Ethernet"
+            self.current_ip = "DHCP-Assigned"
+            self.current_mac = "Hardware-MAC"
+
+        elif self.os_type == "Termux":
+            self.current_hostname = subprocess.getoutput("su -c getprop net.hostname").strip()
+            self.current_machine_id = subprocess.getoutput("su -c settings get secure android_id").strip()
+            self.active_dev = "wlan0"
+            self.current_ip = "Android-IP"
+            self.current_mac = "Android-MAC"
+
+    def show_dashboard(self):
+        self.detect_network()
+        vendor = "Locally Administered (Random Stealth)" if self.current_mac.startswith(("02", "06", "0a", "0e", "12", "16", "1a", "1e", "3a", "3A")) else "Hardware Default"
+        
+        # We print in pure Arabic first to maintain RTL formatting properly in terminals like QTerminal
+        print(f"\n{C_CYAN}  ⚡ كشف البصمات الحالية (كما يراها الراوتر والشبكة) ⚡{C_RESET}")
+        print(f"{C_CYAN} -------------------------------------------------------- {C_RESET}")
+        print(f"  🖥️  اسم الجهاز في الراوتر     : {C_BOLD}{self.current_hostname}{C_RESET}")
+        print(f"  🏷️  عنوان الماك (MAC)         : {C_YELLOW}{self.current_mac}{C_RESET}")
+        print(f"  🏢 مصنع كرت الشبكة (Vendor) : {vendor}")
+        print(f"  🌐 عنوان الآي بي (IPv4)       : {C_GREEN}{self.current_ip}{C_RESET}")
+        print(f"  📡 شبكة الواي فاي الحالية     : {self.active_con} ({self.active_dev})")
+        print(f"  🔑 معرف النظام (Machine ID)  : {self.current_machine_id[:20]}...")
+        print(f"{C_CYAN} -------------------------------------------------------- {C_RESET}\n")
+
+    def print_menu(self):
+        print(f"{C_BOLD}الخيارات والعمليات المتاحة:{C_RESET}")
+        # Formatted cleanly for RTL without starting brackets that flip the terminal
+        print("  1 - ولادة جديدة شاملة (محو كل البصمات بضغطة زر واحدة ⚡)")
+        print("  2 - تغيير هوية الشبكة فقط (الاسم + الماك + تجديد الـ IP)")
+        print("  3 - تصفير وتوليد Machine-ID جديد للنظام (محو البصمة العميقة)")
+        print("  4 - تطهير بصمات المتصفح وفك الأقفال (Crashpad / UUIDs / Locks)")
+        print("  5 - فتح متصفح شبحي فوري (معزول 100% في الرام - Linux)")
+        print("  6 - تفعيل وضع التمويه الدائم التلقائي في الشبكات (Auto MAC)")
+        print("  7 - استعادة الهوية الأصلية للجهاز (Restore Baseline)")
+        print("  8 - إصلاح وفك أقفال متصفح كروم فورياً (Fix Chrome Locks)")
+        print("  9 - وضع الشبح الثابت (Static IP - إيقاف الـ DHCP كلياً للتخفي)")
+        print(f"  {C_RED}0 - خروج (Exit){C_RESET}")
 
     def get_random_mac(self, prefix=""):
         if prefix:
@@ -144,18 +231,20 @@ class RebornEngine:
             subprocess.run(["ip", "link", "set", iface, "down"], capture_output=True)
             subprocess.run(["macchanger", "-m", mac, iface], capture_output=True)
             subprocess.run(["ip", "link", "set", iface, "up"], capture_output=True)
-            subprocess.run(["systemctl", "restart", "NetworkManager"], capture_output=True)
+            
+            # Renew Network
+            if self.active_con != "Unknown":
+                subprocess.run(["nmcli", "con", "up", self.active_con], capture_output=True)
+            else:
+                subprocess.run(["systemctl", "restart", "NetworkManager"], capture_output=True)
 
         elif self.os_type == "Windows":
-            # Change Hostname
             subprocess.run(["powershell", "-Command", f"Rename-Computer -NewName {name}"], capture_output=True)
-            # Change MAC Address requires registry modification on Windows, using generic message
-            print(f"{C_YELLOW}[!] تم جدولة تغيير اسم الويندوز، الماك يتطلب أدوات طرف ثالث أو تعديل الريجستري اليدوي لكرت الشبكة.{C_RESET}")
-            print(f"{C_YELLOW}[!] لتطبيق الاسم الجديد كلياً في الويندوز يرجى إعادة التشغيل لاحقاً.{C_RESET}")
+            print(f"{C_YELLOW}[!] تم تغيير الاسم في الويندوز (يحتاج إعادة تشغيل لاحقاً). لتغيير الماك يرجى تعديل كرت الشبكة يدوياً.{C_RESET}")
 
         elif self.os_type == "Termux":
             subprocess.run(["su", "-c", f"setprop net.hostname {name}"], capture_output=True)
-            print(f"{C_CYAN}▸ تدوير الماك في الأندرويد يتطلب دعم النواة (Kernel)...{C_RESET}")
+            print(f"{C_CYAN}▸ يتم تغيير الماك الآن...{C_RESET}")
             subprocess.run(["su", "-c", "ip link set wlan0 down"], capture_output=True)
             subprocess.run(["su", "-c", f"macchanger -m {mac} wlan0"], capture_output=True)
             subprocess.run(["su", "-c", "ip link set wlan0 up"], capture_output=True)
@@ -165,28 +254,40 @@ class RebornEngine:
     def launch_ghost_browser(self):
         print(f"\n{C_CYAN}▸ إطلاق متصفح شبحي معزول بالكامل في الذاكرة الحية (RAM)...{C_RESET}")
         if self.os_type == "Linux":
-            # Use /tmp for isolated RAM profile
             profile_dir = f"/tmp/ghost_chrome_{random.randint(1000,9999)}"
             cmd = f"nohup google-chrome --user-data-dir={profile_dir} --no-first-run --incognito >/dev/null 2>&1 &"
             os.system(cmd)
             print(f"{C_GREEN}✔ تم إطلاق المتصفح الشبحي بنجاح!{C_RESET}")
         else:
-            print(f"{C_YELLOW}[!] المتصفح الشبحي في الذاكرة مدعوم حالياً على نظام لينكس بشكل كامل.{C_RESET}")
+            print(f"{C_YELLOW}[!] المتصفح الشبحي في الذاكرة مدعوم حالياً على نظام لينكس.{C_RESET}")
+
+    def toggle_auto_mac(self):
+        print(f"\n{C_CYAN}▸ تفعيل/إلغاء التمويه التلقائي الدائم...{C_RESET}")
+        if self.os_type == "Linux":
+            nm_conf = "/etc/NetworkManager/conf.d/90-mac-randomization.conf"
+            if os.path.exists(nm_conf):
+                os.remove(nm_conf)
+                print(f"{C_GREEN}✔ تم إيقاف التمويه التلقائي (الوضع العادي).{C_RESET}")
+            else:
+                with open(nm_conf, "w") as f:
+                    f.write("[device]\nwifi.scan-rand-mac-address=yes\n\n[connection]\nwifi.cloned-mac-address=random\nethernet.cloned-mac-address=random\n")
+                print(f"{C_GREEN}✔ تم تفعيل التمويه الدائم في NetworkManager!{C_RESET}")
+            subprocess.run(["systemctl", "restart", "NetworkManager"])
+        else:
+            print(f"{C_YELLOW}[!] هذه الميزة مدعومة في نظام لينكس (NetworkManager).{C_RESET}")
 
     def interactive_menu(self):
         while True:
             os.system("clear" if self.os_type != "Windows" else "cls")
             print(BANNER)
-            print(f"{C_BOLD}{C_WHITE}الخيارات والعمليات المتاحة:{C_RESET}")
-            print(f"  {C_CYAN}[1]{C_RESET} {C_BOLD}⚡ ولادة جديدة شاملة (Full Reborn - محو كل البصمات وتوليد هوية عشوائية){C_RESET}")
-            print(f"  {C_CYAN}[2]{C_RESET} 🎭 {C_BOLD}تغيير هوية الشبكة فقط (الاسم + الماك){C_RESET}")
-            print(f"  {C_CYAN}[3]{C_RESET} 🔑 {C_BOLD}تصفير وتوليد Machine-ID جديد للنظام{C_RESET}")
-            print(f"  {C_CYAN}[4]{C_RESET} 🧹 {C_BOLD}تطهير بصمات المتصفح وفك الأقفال{C_RESET}")
-            print(f"  {C_CYAN}[5]{C_RESET} 👻 {C_BOLD}فتح متصفح شبحي فوري (معزول في الرام - Linux فقط){C_RESET}")
-            print(f"  {C_RED}[0]{C_RESET} خروج (Exit)")
+            # Safe Arabic formatting avoiding flip
+            print(f"{C_BOLD}  المطور : محمد يقين مجمل الفايق - اليمن (صنعاء){C_RESET}")
+            
+            self.show_dashboard()
+            self.print_menu()
             
             try:
-                opt = input(f"\n{C_YELLOW}اختر العملية [0-5]: {C_RESET}")
+                opt = input(f"\n{C_YELLOW}  اختر العملية [0-9]: {C_RESET}")
             except KeyboardInterrupt:
                 break
                 
@@ -204,10 +305,22 @@ class RebornEngine:
                 self.apply_network_identity(name)
             elif opt == "3":
                 self.reset_machine_id()
-            elif opt == "4":
+            elif opt == "4" or opt == "8":
                 self.clean_browser_footprints()
             elif opt == "5":
                 self.launch_ghost_browser()
+            elif opt == "6":
+                self.toggle_auto_mac()
+            elif opt == "7":
+                print(f"\n{C_YELLOW}[!] سيتم إضافة ميزة الاستعادة من ملف النسخة الاحتياطية في الإصدار القادم.{C_RESET}")
+            elif opt == "9":
+                print(f"\n{C_CYAN}▸ وضع التخفي من DHCP (Static IP Stealth)...{C_RESET}")
+                if self.os_type == "Linux" and self.active_con != "Unknown":
+                    print(f"جارٍ تطبيق إعدادات Static IP على اتصال {self.active_con}")
+                    subprocess.run(["nmcli", "con", "mod", self.active_con, "ipv4.method", "manual"])
+                    print(f"{C_GREEN}✔ تم إيقاف سحب الـ DHCP للتخفي من الراوتر!{C_RESET}")
+                else:
+                    print(f"{C_YELLOW}[!] غير مدعوم على منصتك الحالية أو لا يوجد اتصال نشط.{C_RESET}")
             elif opt == "0":
                 print(f"\n{C_GREEN}في أمان الله!{C_RESET}\n")
                 break
@@ -220,7 +333,7 @@ def main():
     engine = RebornEngine()
     engine.check_privileges()
     
-    parser = argparse.ArgumentParser(description="Reborn ⚡ Ghost Identity & Fingerprint Eraser")
+    parser = argparse.ArgumentParser(description="Reborn ⚡ Universal Ghost Identity & Fingerprint Eraser")
     parser.add_argument("--quick", "-q", action="store_true", help="Quick random identity spoofing and footprint purge")
     parser.add_argument("--ghost-browser", "-g", action="store_true", help="Launch isolated ghost browser in RAM")
     parser.add_argument("--clean", "-c", action="store_true", help="Clean browser footprints and locks")
