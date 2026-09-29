@@ -150,6 +150,7 @@ class RebornEngine:
         print("  7 - استعادة الهوية الأصلية للجهاز (Restore Baseline)")
         print("  8 - إصلاح وفك أقفال متصفح كروم فورياً (Fix Chrome Locks)")
         print("  9 - وضع الشبح الثابت (Static IP - إيقاف الـ DHCP كلياً للتخفي)")
+        print("  10 - إدارة شبكة البث المخفية (Stealth Hotspot - تجاوز حظر التوزيع)")
         print(f"  {C_RED}0 - خروج (Exit){C_RESET}")
 
     def get_random_mac(self, prefix=""):
@@ -261,6 +262,52 @@ class RebornEngine:
         else:
             print(f"{C_YELLOW}[!] المتصفح الشبحي في الذاكرة مدعوم حالياً على نظام لينكس.{C_RESET}")
 
+
+    def stealth_hotspot_menu(self):
+        print(f"\n{C_CYAN}▸ إدارة نقطة البث المخفية (Stealth Hotspot)...{C_RESET}")
+        if self.os_type != "Linux":
+            print(f"{C_YELLOW}[!] هذه الميزة مخصصة لنظام لينكس حالياً.{C_RESET}")
+            return
+            
+        print(f"  1 - تشغيل البث (تجاوز الحظر + TTL 64)")
+        print(f"  2 - إيقاف البث")
+        print(f"  3 - حالة البث (الأجهزة المتصلة)")
+        print(f"  0 - رجوع")
+        
+        opt = input(f"\n{C_YELLOW}  اختر العملية [0-3]: {C_RESET}")
+        
+        iface_in = "ap0"
+        iface_out = self.active_dev if self.active_dev != "Unknown" else "wlp4s0"
+        con_name = "Hotspot-Private"
+        
+        if opt == "1":
+            print(f"\n{C_MAGENTA}[+] جاري تشغيل نقطة البث المخفية...{C_RESET}")
+            os.system(f"iw dev {iface_out} interface add {iface_in} type __ap >/dev/null 2>&1")
+            time.sleep(1)
+            if os.system(f"nmcli connection up '{con_name}' >/dev/null 2>&1") != 0:
+                print(f"{C_RED}[!] فشل بدء الشبكة عبر NetworkManager، تأكد من وجود ملف الاتصال ({con_name}).{C_RESET}")
+            else:
+                os.system("sysctl -w net.ipv4.ip_forward=1 >/dev/null")
+                os.system(f"iptables -t mangle -C PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A PREROUTING -i {iface_out} -j TTL --ttl-set 64")
+                os.system(f"iptables -t mangle -C POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A POSTROUTING -o {iface_out} -j TTL --ttl-set 64")
+                os.system(f"iptables -t nat -C POSTROUTING -s 10.42.0.0/24 -o {iface_out} -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.42.0.0/24 -o {iface_out} -j MASQUERADE")
+                print(f"{C_GREEN}[✓] تم تشغيل الشبكة بنجاح وبوضع التخفي الكامل!{C_RESET}")
+        elif opt == "2":
+            print(f"\n{C_YELLOW}[-] جاري إيقاف نقطة البث وتفريغ القواعد...{C_RESET}")
+            os.system(f"nmcli connection down '{con_name}' >/dev/null 2>&1")
+            os.system(f"iptables -t mangle -D PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null")
+            os.system(f"iptables -t mangle -D POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null")
+            os.system(f"iw dev {iface_in} del >/dev/null 2>&1")
+            print(f"{C_GREEN}[✓] تم الإيقاف بنجاح.{C_RESET}")
+        elif opt == "3":
+            print(f"\n{C_CYAN}=== حالة نقطة البث ==={C_RESET}")
+            if os.system(f"iw dev | grep -q 'Interface {iface_in}'") == 0:
+                print(f"[*] الحالة: {C_GREEN}تعمل الآن (ON){C_RESET}")
+                print(f"[*] الأجهزة المتصلة:")
+                os.system(f"iw dev {iface_in} station dump | grep Station || echo '  (لا توجد أجهزة متصلة)'")
+            else:
+                print(f"[*] الحالة: {C_RED}متوقفة (OFF){C_RESET}")
+
     def toggle_auto_mac(self):
         print(f"\n{C_CYAN}▸ تفعيل/إلغاء التمويه التلقائي الدائم...{C_RESET}")
         if self.os_type == "Linux":
@@ -287,7 +334,7 @@ class RebornEngine:
             self.print_menu()
             
             try:
-                opt = input(f"\n{C_YELLOW}  اختر العملية [0-9]: {C_RESET}")
+                opt = input(f"\n{C_YELLOW}  اختر العملية [0-10]: {C_RESET}")
             except KeyboardInterrupt:
                 break
                 
@@ -313,6 +360,8 @@ class RebornEngine:
                 self.toggle_auto_mac()
             elif opt == "7":
                 print(f"\n{C_YELLOW}[!] سيتم إضافة ميزة الاستعادة من ملف النسخة الاحتياطية في الإصدار القادم.{C_RESET}")
+            elif opt == "10":
+                self.stealth_hotspot_menu()
             elif opt == "9":
                 print(f"\n{C_CYAN}▸ وضع التخفي من DHCP (Static IP Stealth)...{C_RESET}")
                 if self.os_type == "Linux" and self.active_con != "Unknown":
@@ -337,6 +386,7 @@ def main():
     parser.add_argument("--quick", "-q", action="store_true", help="Quick random identity spoofing and footprint purge")
     parser.add_argument("--ghost-browser", "-g", action="store_true", help="Launch isolated ghost browser in RAM")
     parser.add_argument("--clean", "-c", action="store_true", help="Clean browser footprints and locks")
+    parser.add_argument("--hotspot", "-H", choices=["on", "off", "status"], help="Manage stealth hotspot without opening menu")
     
     args = parser.parse_args()
     
