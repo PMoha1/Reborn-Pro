@@ -73,21 +73,18 @@ class RebornEngine:
 
     def detect_network(self):
         if self.os_type == "Linux":
-            # Hostname
             try:
                 with open("/etc/hostname", "r") as f:
                     self.current_hostname = f.read().strip()
             except:
                 self.current_hostname = subprocess.getoutput("hostname")
             
-            # Machine ID
             try:
                 with open("/etc/machine-id", "r") as f:
                     self.current_machine_id = f.read().strip()
             except:
                 self.current_machine_id = "None"
                 
-            # Network Device & IP
             out = subprocess.getoutput("ip route show default")
             if "dev " in out:
                 self.active_dev = out.split("dev ")[1].split()[0]
@@ -127,7 +124,6 @@ class RebornEngine:
         self.detect_network()
         vendor = "Locally Administered (Random Stealth)" if self.current_mac.startswith(("02", "06", "0a", "0e", "12", "16", "1a", "1e", "3a", "3A")) else "Hardware Default"
         
-        # We print in pure Arabic first to maintain RTL formatting properly in terminals like QTerminal
         print(f"\n{C_CYAN}  ⚡ كشف البصمات الحالية (كما يراها الراوتر والشبكة) ⚡{C_RESET}")
         print(f"{C_CYAN} -------------------------------------------------------- {C_RESET}")
         print(f"  🖥️  اسم الجهاز في الراوتر     : {C_BOLD}{self.current_hostname}{C_RESET}")
@@ -140,7 +136,6 @@ class RebornEngine:
 
     def print_menu(self):
         print(f"{C_BOLD}الخيارات والعمليات المتاحة:{C_RESET}")
-        # Formatted cleanly for RTL without starting brackets that flip the terminal
         print("  1 - ولادة جديدة شاملة (محو كل البصمات بضغطة زر واحدة ⚡)")
         print("  2 - تغيير هوية الشبكة فقط (الاسم + الماك + تجديد الـ IP)")
         print("  3 - تصفير وتوليد Machine-ID جديد للنظام (محو البصمة العميقة)")
@@ -150,7 +145,7 @@ class RebornEngine:
         print("  7 - استعادة الهوية الأصلية للجهاز (Restore Baseline)")
         print("  8 - إصلاح وفك أقفال متصفح كروم فورياً (Fix Chrome Locks)")
         print("  9 - وضع الشبح الثابت (Static IP - إيقاف الـ DHCP كلياً للتخفي)")
-        print("  10 - إدارة شبكة البث المخفية (Stealth Hotspot - تجاوز حظر التوزيع)")
+        print(f"  {C_MAGENTA}10 - نقطة البث المخفية (Stealth Hotspot - تجاوز الحظر وتغيير الباسورد){C_RESET}")
         print(f"  {C_RED}0 - خروج (Exit){C_RESET}")
 
     def get_random_mac(self, prefix=""):
@@ -178,13 +173,11 @@ class RebornEngine:
                 os.remove("/var/lib/dbus/machine-id")
                 subprocess.run(["dbus-uuidgen", "--ensure"], capture_output=True)
             print(f"{C_GREEN}✔ تم محو البصمة العميقة للينكس بنجاح!{C_RESET}")
-        
         elif self.os_type == "Windows":
             new_guid = str(uuid.uuid4())
             cmd = f'reg add HKLM\\SOFTWARE\\Microsoft\\Cryptography /v MachineGuid /t REG_SZ /d {new_guid} /f'
             subprocess.run(cmd, shell=True, capture_output=True)
             print(f"{C_GREEN}✔ تم محو MachineGuid للويندوز بنجاح!{C_RESET}")
-            
         elif self.os_type == "Termux":
             new_id = "".join(random.choice("0123456789abcdef") for _ in range(16))
             subprocess.run(["su", "-c", f"settings put secure android_id {new_id}"], capture_output=True)
@@ -219,9 +212,7 @@ class RebornEngine:
         print(f"  • الماك الجديد: {C_YELLOW}{mac}{C_RESET}")
 
         if self.os_type == "Linux":
-            # Change Hostname
             subprocess.run(["hostnamectl", "set-hostname", name], capture_output=True)
-            # Find Active Interface
             res = subprocess.run(["ip", "route", "show", "default"], capture_output=True, text=True)
             iface = "wlan0"
             for line in res.stdout.split('\n'):
@@ -233,7 +224,6 @@ class RebornEngine:
             subprocess.run(["macchanger", "-m", mac, iface], capture_output=True)
             subprocess.run(["ip", "link", "set", iface, "up"], capture_output=True)
             
-            # Renew Network
             if self.active_con != "Unknown":
                 subprocess.run(["nmcli", "con", "up", self.active_con], capture_output=True)
             else:
@@ -241,11 +231,10 @@ class RebornEngine:
 
         elif self.os_type == "Windows":
             subprocess.run(["powershell", "-Command", f"Rename-Computer -NewName {name}"], capture_output=True)
-            print(f"{C_YELLOW}[!] تم تغيير الاسم في الويندوز (يحتاج إعادة تشغيل لاحقاً). لتغيير الماك يرجى تعديل كرت الشبكة يدوياً.{C_RESET}")
+            print(f"{C_YELLOW}[!] تم تغيير الاسم في الويندوز (يحتاج إعادة تشغيل لاحقاً).{C_RESET}")
 
         elif self.os_type == "Termux":
             subprocess.run(["su", "-c", f"setprop net.hostname {name}"], capture_output=True)
-            print(f"{C_CYAN}▸ يتم تغيير الماك الآن...{C_RESET}")
             subprocess.run(["su", "-c", "ip link set wlan0 down"], capture_output=True)
             subprocess.run(["su", "-c", f"macchanger -m {mac} wlan0"], capture_output=True)
             subprocess.run(["su", "-c", "ip link set wlan0 up"], capture_output=True)
@@ -259,54 +248,6 @@ class RebornEngine:
             cmd = f"nohup google-chrome --user-data-dir={profile_dir} --no-first-run --incognito >/dev/null 2>&1 &"
             os.system(cmd)
             print(f"{C_GREEN}✔ تم إطلاق المتصفح الشبحي بنجاح!{C_RESET}")
-        else:
-            print(f"{C_YELLOW}[!] المتصفح الشبحي في الذاكرة مدعوم حالياً على نظام لينكس.{C_RESET}")
-
-
-    def stealth_hotspot_menu(self):
-        print(f"\n{C_CYAN}▸ إدارة نقطة البث المخفية (Stealth Hotspot)...{C_RESET}")
-        if self.os_type != "Linux":
-            print(f"{C_YELLOW}[!] هذه الميزة مخصصة لنظام لينكس حالياً.{C_RESET}")
-            return
-            
-        print(f"  1 - تشغيل البث (تجاوز الحظر + TTL 64)")
-        print(f"  2 - إيقاف البث")
-        print(f"  3 - حالة البث (الأجهزة المتصلة)")
-        print(f"  0 - رجوع")
-        
-        opt = input(f"\n{C_YELLOW}  اختر العملية [0-3]: {C_RESET}")
-        
-        iface_in = "ap0"
-        iface_out = self.active_dev if self.active_dev != "Unknown" else "wlp4s0"
-        con_name = "Hotspot-Private"
-        
-        if opt == "1":
-            print(f"\n{C_MAGENTA}[+] جاري تشغيل نقطة البث المخفية...{C_RESET}")
-            os.system(f"iw dev {iface_out} interface add {iface_in} type __ap >/dev/null 2>&1")
-            time.sleep(1)
-            if os.system(f"nmcli connection up '{con_name}' >/dev/null 2>&1") != 0:
-                print(f"{C_RED}[!] فشل بدء الشبكة عبر NetworkManager، تأكد من وجود ملف الاتصال ({con_name}).{C_RESET}")
-            else:
-                os.system("sysctl -w net.ipv4.ip_forward=1 >/dev/null")
-                os.system(f"iptables -t mangle -C PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A PREROUTING -i {iface_out} -j TTL --ttl-set 64")
-                os.system(f"iptables -t mangle -C POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A POSTROUTING -o {iface_out} -j TTL --ttl-set 64")
-                os.system(f"iptables -t nat -C POSTROUTING -s 10.42.0.0/24 -o {iface_out} -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.42.0.0/24 -o {iface_out} -j MASQUERADE")
-                print(f"{C_GREEN}[✓] تم تشغيل الشبكة بنجاح وبوضع التخفي الكامل!{C_RESET}")
-        elif opt == "2":
-            print(f"\n{C_YELLOW}[-] جاري إيقاف نقطة البث وتفريغ القواعد...{C_RESET}")
-            os.system(f"nmcli connection down '{con_name}' >/dev/null 2>&1")
-            os.system(f"iptables -t mangle -D PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null")
-            os.system(f"iptables -t mangle -D POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null")
-            os.system(f"iw dev {iface_in} del >/dev/null 2>&1")
-            print(f"{C_GREEN}[✓] تم الإيقاف بنجاح.{C_RESET}")
-        elif opt == "3":
-            print(f"\n{C_CYAN}=== حالة نقطة البث ==={C_RESET}")
-            if os.system(f"iw dev | grep -q 'Interface {iface_in}'") == 0:
-                print(f"[*] الحالة: {C_GREEN}تعمل الآن (ON){C_RESET}")
-                print(f"[*] الأجهزة المتصلة:")
-                os.system(f"iw dev {iface_in} station dump | grep Station || echo '  (لا توجد أجهزة متصلة)'")
-            else:
-                print(f"[*] الحالة: {C_RED}متوقفة (OFF){C_RESET}")
 
     def toggle_auto_mac(self):
         print(f"\n{C_CYAN}▸ تفعيل/إلغاء التمويه التلقائي الدائم...{C_RESET}")
@@ -320,14 +261,144 @@ class RebornEngine:
                     f.write("[device]\nwifi.scan-rand-mac-address=yes\n\n[connection]\nwifi.cloned-mac-address=random\nethernet.cloned-mac-address=random\n")
                 print(f"{C_GREEN}✔ تم تفعيل التمويه الدائم في NetworkManager!{C_RESET}")
             subprocess.run(["systemctl", "restart", "NetworkManager"])
+
+    def prevent_lid_sleep(self, enable=True):
+        # يمنع اللابتوب من النوم عند إغلاق الشاشة
+        conf_file = "/etc/systemd/logind.conf"
+        if enable:
+            os.system(f"sed -i 's/.*HandleLidSwitch=.*/HandleLidSwitch=ignore/' {conf_file}")
+            print(f"{C_GREEN}[✓] تم تعطيل النوم عند إغلاق الشاشة (ستستمر الشبكة بالعمل).{C_RESET}")
         else:
-            print(f"{C_YELLOW}[!] هذه الميزة مدعومة في نظام لينكس (NetworkManager).{C_RESET}")
+            os.system(f"sed -i 's/.*HandleLidSwitch=.*/HandleLidSwitch=suspend/' {conf_file}")
+            print(f"{C_YELLOW}[-] تم إعادة تفعيل النوم عند إغلاق الشاشة.{C_RESET}")
+        os.system("systemctl restart systemd-logind")
+
+    def stealth_hotspot_menu(self):
+        if self.os_type != "Linux":
+            print(f"{C_YELLOW}[!] هذه الميزة مخصصة لنظام لينكس حالياً.{C_RESET}")
+            return
+            
+        con_name = "Hotspot-Private"
+        iface_in = "ap0"
+        
+        while True:
+            self.detect_network()
+            iface_out = self.active_dev if self.active_dev != "Unknown" else "wlp4s0"
+            
+            # Fetch current SSID and Password from NM if it exists
+            ssid_out = subprocess.getoutput(f"nmcli -g 802-11-wireless.ssid con show '{con_name}' 2>/dev/null")
+            pass_out = subprocess.getoutput(f"nmcli -g 802-11-wireless-security.psk con show '{con_name}' 2>/dev/null")
+            current_ssid = ssid_out if ssid_out else "NET"
+            current_pass = pass_out if pass_out else "123456788"
+
+            print(f"\n{C_CYAN}════════ إدارة نقطة البث المخفية (Stealth Hotspot) ════════{C_RESET}")
+            print(f"  {C_DIM}• كرت الإنترنت: {iface_out} | كرت البث: {iface_in}{C_RESET}")
+            print(f"  {C_DIM}• الشبكة الحالية: {current_ssid} | الرمز: {current_pass}{C_RESET}")
+            print(f"{C_CYAN}───────────────────────────────────────────────────────────{C_RESET}")
+            print(f"  1 - تشغيل البث (تجاوز حظر + حماية أجهزة الميكروتك + منع النوم)")
+            print(f"  2 - إيقاف البث")
+            print(f"  3 - تغيير اسم الشبكة (SSID) وكلمة المرور")
+            print(f"  4 - منع/تفعيل النوم عند إغلاق الشاشة (Lid Switch)")
+            print(f"  5 - عرض الأجهزة المتصلة وحالة البث")
+            print(f"  0 - رجوع للقائمة الرئيسية")
+            
+            opt = input(f"\n{C_YELLOW}  اختر العملية [0-5]: {C_RESET}")
+            
+            if opt == "1":
+                print(f"\n{C_MAGENTA}[+] جاري تجهيز الشبكة لمنع الانقطاع وحجب الأجهزة...{C_RESET}")
+                
+                # منع اللابتوب من النوم
+                self.prevent_lid_sleep(enable=True)
+                
+                # Check if profile exists, if not create it properly
+                if subprocess.run(["nmcli", "con", "show", con_name], capture_output=True).returncode != 0:
+                    print(f"{C_YELLOW}[!] جاري بناء ملف الاتصال ({con_name}) لأول مرة...{C_RESET}")
+                    os.system(f'nmcli con add type wifi ifname {iface_in} con-name "{con_name}" autoconnect no ssid "{current_ssid}" 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared >/dev/null 2>&1')
+                    os.system(f'nmcli con modify "{con_name}" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "{current_pass}" >/dev/null 2>&1')
+
+                # Create virtual interface properly
+                os.system(f"iw dev {iface_in} del >/dev/null 2>&1")
+                time.sleep(0.5)
+                os.system(f"iw dev {iface_out} interface add {iface_in} type __ap >/dev/null 2>&1")
+                
+                # Ensure the virtual interface has a randomized MAC to avoid NM confusion
+                os.system(f"ip link set dev {iface_in} address {self.get_random_mac('02:11:22')} >/dev/null 2>&1")
+                
+                print(f"{C_MAGENTA}[+] جاري تشغيل البث عبر NetworkManager...{C_RESET}")
+                if os.system(f"nmcli connection up '{con_name}' >/dev/null 2>&1") != 0:
+                    print(f"{C_RED}[!] فشل التشغيل. تأكد أن كرت الواي فاي يدعم البث المتزامن وأنك غير متصل بشبكة 5GHz لا تدعم البث.{C_RESET}")
+                else:
+                    # تفعيل حجب الأجهزة عن الميكروتك (Evasion Rules)
+                    os.system("sysctl -w net.ipv4.ip_forward=1 >/dev/null")
+                    
+                    # 1. إخفاء الأجهزة خلف IP اللابتوب
+                    os.system(f"iptables -t nat -C POSTROUTING -o {iface_out} -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -o {iface_out} -j MASQUERADE")
+                    
+                    # 2. تطبيع TTL لجميع الحزم بحيث تبدو قادمة من اللابتوب فقط
+                    os.system(f"iptables -t mangle -C PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A PREROUTING -i {iface_out} -j TTL --ttl-set 64")
+                    os.system(f"iptables -t mangle -C POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A POSTROUTING -o {iface_out} -j TTL --ttl-set 64")
+                    os.system(f"iptables -t mangle -C FORWARD -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -I FORWARD -j TTL --ttl-set 64")
+                    
+                    # 3. تعديل حجم حزم TCP لمنع كشف الـ MTU
+                    os.system(f"iptables -t mangle -C FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu")
+                    
+                    print(f"{C_GREEN}[✓] تم تشغيل الشبكة بنجاح! الأجهزة المتصلة الآن مخفية تماماً عن الميكروتك.{C_RESET}")
+            
+            elif opt == "2":
+                print(f"\n{C_YELLOW}[-] جاري إيقاف نقطة البث وتفريغ قواعد التخفي...{C_RESET}")
+                os.system(f"nmcli connection down '{con_name}' >/dev/null 2>&1")
+                
+                # مسح القواعد
+                os.system(f"iptables -t nat -D POSTROUTING -o {iface_out} -j MASQUERADE 2>/dev/null")
+                os.system(f"iptables -t mangle -D PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null")
+                os.system(f"iptables -t mangle -D POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null")
+                os.system(f"iptables -t mangle -D FORWARD -j TTL --ttl-set 64 2>/dev/null")
+                os.system(f"iptables -t mangle -D FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null")
+                
+                os.system(f"iw dev {iface_in} del >/dev/null 2>&1")
+                self.prevent_lid_sleep(enable=False)
+                print(f"{C_GREEN}[✓] تم الإيقاف بنجاح.{C_RESET}")
+                
+            elif opt == "3":
+                new_ssid = input(f"{C_CYAN}أدخل اسم الشبكة الجديد (SSID): {C_RESET}")
+                new_pass = input(f"{C_CYAN}أدخل كلمة المرور الجديدة (8 أحرف كحد أدنى): {C_RESET}")
+                
+                if len(new_pass) < 8:
+                    print(f"{C_RED}[!] كلمة المرور يجب أن تكون 8 أحرف على الأقل!{C_RESET}")
+                else:
+                    if subprocess.run(["nmcli", "con", "show", con_name], capture_output=True).returncode == 0:
+                        os.system(f'nmcli con modify "{con_name}" ssid "{new_ssid}" wifi-sec.psk "{new_pass}"')
+                        print(f"{C_GREEN}[✓] تم تحديث الاسم وكلمة المرور بنجاح! يرجى إيقاف وتشغيل البث لتطبيقها.{C_RESET}")
+                    else:
+                        os.system(f'nmcli con add type wifi ifname {iface_in} con-name "{con_name}" autoconnect no ssid "{new_ssid}" 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared >/dev/null 2>&1')
+                        os.system(f'nmcli con modify "{con_name}" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "{new_pass}" >/dev/null 2>&1')
+                        print(f"{C_GREEN}[✓] تم إنشاء ملف البث بالإعدادات الجديدة بنجاح.{C_RESET}")
+
+            elif opt == "4":
+                conf_check = subprocess.getoutput("grep '^HandleLidSwitch=ignore' /etc/systemd/logind.conf")
+                if conf_check:
+                    self.prevent_lid_sleep(enable=False)
+                else:
+                    self.prevent_lid_sleep(enable=True)
+
+            elif opt == "5":
+                print(f"\n{C_CYAN}=== حالة نقطة البث ==={C_RESET}")
+                if os.system(f"iw dev | grep -q 'Interface {iface_in}'") == 0:
+                    print(f"[*] الحالة: {C_GREEN}تعمل الآن (ON){C_RESET}")
+                    print(f"[*] الأجهزة المتصلة:")
+                    os.system(f"iw dev {iface_in} station dump | grep Station || echo '  (لا توجد أجهزة متصلة)'")
+                else:
+                    print(f"[*] الحالة: {C_RED}متوقفة (OFF){C_RESET}")
+                    
+            elif opt == "0":
+                break
+            else:
+                print(f"{C_RED}خيار غير صالح!{C_RESET}")
 
     def interactive_menu(self):
         while True:
             os.system("clear" if self.os_type != "Windows" else "cls")
             print(BANNER)
-            # Safe Arabic formatting avoiding flip
             print(f"{C_BOLD}  المطور : محمد يقين مجمل الفايق - اليمن (صنعاء){C_RESET}")
             
             self.show_dashboard()
@@ -399,6 +470,42 @@ def main():
         engine.launch_ghost_browser()
     elif args.clean:
         engine.clean_browser_footprints()
+    elif args.hotspot:
+        engine.detect_network()
+        iface_in = "ap0"
+        iface_out = engine.active_dev if engine.active_dev != "Unknown" else "wlp4s0"
+        con_name = "Hotspot-Private"
+        if args.hotspot == "on":
+            engine.prevent_lid_sleep(enable=True)
+            # Create profile if not exist
+            if subprocess.run(["nmcli", "con", "show", con_name], capture_output=True).returncode != 0:
+                os.system(f'nmcli con add type wifi ifname {iface_in} con-name "{con_name}" autoconnect no ssid "NET_GHOST" 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared >/dev/null 2>&1')
+                os.system(f'nmcli con modify "{con_name}" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "123456788" >/dev/null 2>&1')
+            
+            os.system(f"iw dev {iface_in} del >/dev/null 2>&1")
+            time.sleep(0.5)
+            os.system(f"iw dev {iface_out} interface add {iface_in} type __ap >/dev/null 2>&1")
+            os.system(f"ip link set dev {iface_in} address {engine.get_random_mac('02:11:22')} >/dev/null 2>&1")
+            os.system(f"nmcli connection up '{con_name}' >/dev/null 2>&1")
+            os.system("sysctl -w net.ipv4.ip_forward=1 >/dev/null")
+            os.system(f"iptables -t nat -C POSTROUTING -o {iface_out} -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -o {iface_out} -j MASQUERADE")
+            os.system(f"iptables -t mangle -C PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A PREROUTING -i {iface_out} -j TTL --ttl-set 64")
+            os.system(f"iptables -t mangle -C POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -A POSTROUTING -o {iface_out} -j TTL --ttl-set 64")
+            os.system(f"iptables -t mangle -C FORWARD -j TTL --ttl-set 64 2>/dev/null || iptables -t mangle -I FORWARD -j TTL --ttl-set 64")
+            os.system(f"iptables -t mangle -C FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu")
+            print(f"\033[32m[✓] Stealth Hotspot ON (Lid Sleep Prevented & MikroTik Evasion Active)\033[0m")
+        elif args.hotspot == "off":
+            os.system(f"nmcli connection down '{con_name}' >/dev/null 2>&1")
+            os.system(f"iptables -t nat -D POSTROUTING -o {iface_out} -j MASQUERADE 2>/dev/null")
+            os.system(f"iptables -t mangle -D PREROUTING -i {iface_out} -j TTL --ttl-set 64 2>/dev/null")
+            os.system(f"iptables -t mangle -D POSTROUTING -o {iface_out} -j TTL --ttl-set 64 2>/dev/null")
+            os.system(f"iptables -t mangle -D FORWARD -j TTL --ttl-set 64 2>/dev/null")
+            os.system(f"iptables -t mangle -D FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null")
+            os.system(f"iw dev {iface_in} del >/dev/null 2>&1")
+            engine.prevent_lid_sleep(enable=False)
+            print(f"\033[32m[✓] Stealth Hotspot OFF\033[0m")
+        elif args.hotspot == "status":
+            os.system(f"iw dev {iface_in} station dump | grep Station || echo 'No devices connected'")
     else:
         engine.interactive_menu()
 
