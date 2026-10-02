@@ -1,80 +1,49 @@
-# Reborn ⚡
-
-> **Universal Ghost Identity & Fingerprint Eraser**  
-> **أداة التخفي ومسح البصمات وتغيير الهوية الشاملة وعابرة للمنصات**  
-> *Engineered for Linux (Arch, Kali, Debian, Ubuntu, Fedora), Windows, and Android (Termux with Root).*
-
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](#)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20Termux-brightgreen.svg)](#)
-[![Language](https://img.shields.io/badge/Language-Arabic%20%7C%20English-orange.svg)](#)
+<div align="center">
+  <h1>👻 Reborn-Pro (Ghost Identity Engine)</h1>
+  <p><b>محرك التخفي الأقوى ومحو البصمة الرقمية (Anti-Fingerprint) متعدد المنصات.</b></p>
+  <p><i>Developed by <a href="https://github.com/PMoha1">PMoha1</a></i></p>
+</div>
 
 ---
 
-## 📖 Executive Summary / ملخص المشروع باختصار
+## 👁️ نظرة عامة (Overview)
+أداة **Reborn-Pro** هي بيئة متقدمة مبنية بتقنيات (Bash Scripting) مصممة لإخفاء الهوية الرقمية، مسح البصمات من جذور النظام (Machine-ID, MAC, Hostname)، وتمويه الترافيك الشبكي. 
+الأداة متوافقة للعمل على:
+- 🐧 **أنظمة لينكس (Linux / Arch / Debian)** بشكل أصلي.
+- 📱 **بيئة تيرمكس (Termux - Android)** للعمليات المحمولة (يتطلب صلاحيات Root لتعديل الماك).
+- 🪟 **أنظمة ويندوز (Windows)** عبر بيئة (WSL أو Git Bash).
 
-### 🇸🇦 **باللغة العربية (ما هو المشروع وكيف يعمل؟):**
-**Reborn ⚡** هي أداة متطورة متوفرة الآن بنسخة بايثون الشاملة لتعمل على (Linux و Windows و Android Termux). متخصصة في **طمس البصمات الرقمية (Fingerprint Eraser) وتغيير هوية الجهاز بالكامل** لحمايتك من التتبع أو تجاوز الحظر.
-
-#### ⚙️ **كيف تعمل الأداة باختصار؟**
-1. **الولادة الجديدة (Full Reborn):** بضغطة زر تقوم بتغيير اسم الجهاز، تدوير الماك أدرس (MAC Address)، وتوليد Machine-ID جديد بالكامل للنظام لتبدو وكأنك تستخدم جهازاً جديداً.
-2. **فك قيود المتصفحات (Browser Ghosting):** مسح ملفات التتبع العميقة وأقفال المتصفحات (Crashpad/Cookies/Singleton Locks).
-3. **متصفح الرام المعزول (RAM Ghost Browser):** إطلاق متصفح جوجل كروم في بيئة معزولة تماماً داخل الذاكرة العشوائية (RAM)، ليتبخر كل شيء بمجرد الإغلاق (متوفر للينكس).
-4. **عابرة للمنصات (Cross-Platform):** تتعرف الأداة تلقائياً على نظامك (ويندوز، لينكس، تيرمكس) وتنفذ الأوامر المتوافقة مع النواة الخاصة به.
+*(ملاحظة: تدعم الأداة اللغتين العربية والإنجليزية ديناميكياً داخل واجهة الـ Terminal).*
 
 ---
 
-### 🇬🇧 **In English (What is it & How does it work?):**
-**Reborn ⚡** is an advanced, cross-platform Python engine (Linux, Windows, Android Termux) designed for **Digital Fingerprint Erasure and Ghost Identity Generation** to protect against tracking and evade device bans.
+## ⚡ العمليات والخيارات المتاحة (The 9 Stealth Vectors)
 
-#### ⚙️ **How it Works in Brief:**
-1. **Full Reborn Identity Spoofing:** One click instantly changes the Hostname, rotates the MAC Address, and generates a completely new OS Machine-ID, making your device appear brand new to networks.
-2. **Browser Lock & Footprint Purge:** Wipes deep tracking files, Crashpad caches, and Singleton locks from Chromium-based browsers.
-3. **Ephemeral RAM Browser (Ghost Mode):** Launches Google Chrome entirely within isolated RAM storage. Once closed, all session data evaporates instantly (Linux feature).
-4. **Cross-Platform Intelligence:** Automatically detects your OS and kernel (Windows, Linux, or Termux) and executes native system calls.
+بمجرد كتابة `reborn` في الطرفية (Terminal)، ستظهر لك 9 خيارات تكتيكية لتغيير هويتك بالكامل:
 
----
-
-## 🌟 Key Features / المميزات الرئيسية
-
-- **🌐 Cross-Platform:** يعمل على الويندوز واللينكس والتيرمكس بسكريبت واحد.
-- **🎭 Complete OS Morphing:** تزوير الماك والـ Machine ID واسم الجهاز بنقرة واحدة.
-- **🛡️ RAM Isolation:** إطلاق متصفح وهمي لا يترك أي أثر على القرص الصلب.
-- **🧼 Deep Cleaning:** تنظيف ملفات التتبع المخفية للمتصفحات لحل مشاكل التعليق أو تتبع الجلسات.
+1. ⚡ **Full Reborn (الولادة الجديدة):** تغيير الهوية بالكامل بضغطة زر (MAC, Hostname, Machine-ID) وتنظيف المتصفح.
+2. 🎭 **تغيير هوية الشبكة فقط:** تعديل بصمة كرت الشبكة والاسم للتهرب من الجدران النارية والراوترات دون المساس بباقي النظام.
+3. 🔑 **تصفير Machine-ID:** توليد معرفات نظام جديدة (System UUIDs) لمسح البصمة العميقة التي تتتبعها التطبيقات.
+4. 🧹 **تطهير بصمات المتصفح:** مسح ملفات الارتباط، الـ Crashpads، والـ UUIDs المخبأة داخل ملفات المتصفحات.
+5. 👻 **متصفح شبحي (Ephemeral Browser):** إطلاق متصفح يعمل بالكامل داخل الرام (RAM) ولا يحفظ أي بيانات على القرص.
+6. 🛡️ **التمويه الدائم:** تفعيل عشوائية الـ MAC بشكل تلقائي عند كل اتصال جديد بالشبكة.
+7. 🔄 **استعادة الهوية الأصلية:** العودة لوضع المصنع وإلغاء جميع التمويهات.
+8. 🔓 **إصلاح المتصفح (Fix Browser Locks):** *(أهم خيار للتعافي - انظر التفاصيل بالأسفل).*
+9. 👻 **وضع الشبح الثابت (Static Stealth):** إيقاف بروتوكول الـ DHCP بالكامل وتعيين IP ثابت بصمت لتخطي تعقب جداول الـ Leases في الراوتر.
 
 ---
 
-## 🚀 Quick Start / التثبيت والتشغيل السريع
+## 🚨 حل مشكلة تعليق المتصفحات (الخيار رقم 8)
+**المشكلة:** 
+عندما تقوم الأداة بتغيير هوية النظام (مثل الـ Hostname أو Machine-ID) بقوة، تقوم متصفحات مبنية على Chromium (مثل Google Chrome و Edge) بوضع **قفل أمان (SingletonLock)** لمنع المتصفح من العمل، ظناً منها أن هناك ملفات تعريف ارتباط مسروقة أو أن النظام تم اختراقه. هذا يؤدي إلى انهيار المتصفح أو رفضه للفتح.
 
-### 💻 على أنظمة لينكس (Linux / Arch / Debian):
-```bash
-sudo python3 reborn.py
-```
-
-### 📱 على تيرمكس (Android Termux - Root Required):
-```bash
-tsu
-python3 reborn.py
-```
-
-### 🪟 على ويندوز (Windows):
-افتح موجه الأوامر (CMD) أو PowerShell كمسؤول (Run as Administrator) واكتب:
-```powershell
-python reborn.py
-```
+**الحل (الخيار 8 - Fix Browser Singleton Locks):**
+تمت برمجة هذا الخيار خصيصاً كإجراء إنعاش طارئ. يقوم هذا الخيار بالبحث في طبقات النظام المخفية وتدمير جميع أقفال الـ Singleton Locks القديمة وبقايا الـ UUIDs ليعود المتصفح للعمل فوراً وبدون الحاجة لإعادة تشغيل النظام، مما يضمن استمرارية العملية الهجومية دون انقطاع.
 
 ---
 
-## 👨‍💻 About the Developer / نبذة عن المطور
-
-### 🇾🇪 **محمد يقين مجمل الفايق (Mohammed Yaqeen Mujamal Al-Faiq)**
-- 📍 **الموقع (Location):** الجمهورية اليمنية - صنعاء (Yemen - Sana'a)
-- 📺 **صانع محتوى تقني (Tech Creator):** صاحب قناة يوتيوب مخصصة لتقديم شروحات متقدمة وتجارب عملية في أنظمة وتوزيعات لينكس المختلفة.
-- 💡 **الاهتمامات والخبرات (Interests & Focus):**
-  - اختبار وتطوير أدوات الشبكات والأمن السيبراني وتقييم المرونة.
-  - التجارب العميقة على توزيعات لينكس وإدارة الأنظمة المتقدمة.
-  - أبحاث وتطبيقات الذكاء الاصطناعي والموديلات المحلية غير المقيدة (Local & Uncensored AI Models).
-
----
-
-## 📄 License
-This project is licensed under the MIT License.
+<div align="center">
+  <b>PMoha1 | Offensive AI & Hardware Hacker</b><br>
+  <a href="https://youtube.com/@PMoha1"><img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" /></a>
+  <a href="https://github.com/PMoha1"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" /></a>
+</div>
