@@ -61,18 +61,50 @@ run_root() {
 
 launch_default_browser() {
     local target_url="${1:-}"
+    local b_cmd=""
+
     if command -v google-chrome &>/dev/null; then
-        nohup google-chrome ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        b_cmd="google-chrome"
+    elif command -v google-chrome-stable &>/dev/null; then
+        b_cmd="google-chrome-stable"
     elif command -v chromium &>/dev/null; then
-        nohup chromium ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        b_cmd="chromium"
+    elif command -v chromium-browser &>/dev/null; then
+        b_cmd="chromium-browser"
     elif command -v firefox-esr &>/dev/null; then
-        nohup firefox-esr ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        b_cmd="firefox-esr"
     elif command -v firefox &>/dev/null; then
-        nohup firefox ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        b_cmd="firefox"
     elif command -v brave &>/dev/null; then
-        nohup brave ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        b_cmd="brave"
     elif command -v x-www-browser &>/dev/null; then
-        nohup x-www-browser ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        b_cmd="x-www-browser"
+    fi
+
+    if [[ -z "$b_cmd" ]]; then
+        echo -e "${C_RED}❌ لم يتم العثور على أي متصفح مثبت في النظام!${C_RESET}"
+        return 1
+    fi
+
+    export DISPLAY="${DISPLAY:-:0}"
+
+    # Launch cleanly without root sandbox crashes
+    if [[ "$EUID" -eq 0 ]]; then
+        if [[ -n "$SUDO_USER" && "$SUDO_USER" != "root" ]]; then
+            local user_xauth="${TARGET_HOME}/.Xauthority"
+            if [[ -f "$user_xauth" ]]; then
+                export XAUTHORITY="$user_xauth"
+            fi
+            nohup sudo -u "$SUDO_USER" DISPLAY="$DISPLAY" XAUTHORITY="${XAUTHORITY:-$user_xauth}" "$b_cmd" ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        else
+            local root_flags=""
+            if [[ "$b_cmd" == *"chrome"* || "$b_cmd" == *"chromium"* || "$b_cmd" == *"brave"* ]]; then
+                root_flags="--no-sandbox --test-type"
+            fi
+            nohup "$b_cmd" $root_flags ${target_url:+"$target_url"} >/dev/null 2>&1 &
+        fi
+    else
+        nohup "$b_cmd" ${target_url:+"$target_url"} >/dev/null 2>&1 &
     fi
 }
 
@@ -85,13 +117,39 @@ set_ttl() {
 # Helper: Fix Browser Singleton Locks (Crucial after hostname changes)
 # ------------------------------------------------------------------------------
 fix_browser_locks() {
-    rm -f "${TARGET_HOME}/.config/google-chrome/Singleton*" 2>/dev/null || true
-    rm -f "${TARGET_HOME}/.config/chromium/Singleton*" 2>/dev/null || true
-    rm -f "${TARGET_HOME}/.config/BraveSoftware/Brave-Browser/Singleton*" 2>/dev/null || true
-    rm -f "${TARGET_HOME}/.config/microsoft-edge/Singleton*" 2>/dev/null || true
-    rm -rf /tmp/com.google.Chrome.* 2>/dev/null || true
+    # 1. Kill any zombie browser processes holding locks
+    pkill -9 -f "chrome" 2>/dev/null || true
+    pkill -9 -f "chromium" 2>/dev/null || true
+    pkill -9 -f "firefox" 2>/dev/null || true
+    sleep 0.3
+
+    # 2. Destroy Chromium / Chrome Singleton locks and sockets across user and root configs
+    local config_dirs=("${TARGET_HOME}/.config" "/root/.config")
+    for cfg in "${config_dirs[@]}"; do
+        rm -f "$cfg"/google-chrome/Singleton* 2>/dev/null || true
+        rm -f "$cfg"/google-chrome/*/Singleton* 2>/dev/null || true
+        rm -f "$cfg"/chromium/Singleton* 2>/dev/null || true
+        rm -f "$cfg"/chromium/*/Singleton* 2>/dev/null || true
+        rm -f "$cfg"/BraveSoftware/Brave-Browser/Singleton* 2>/dev/null || true
+        rm -f "$cfg"/microsoft-edge/Singleton* 2>/dev/null || true
+    done
+
+    # 3. Clean temporary lock sockets in /tmp
+    rm -rf /tmp/com.google.Chrome.* /tmp/.com.google.Chrome.* 2>/dev/null || true
+    rm -rf /tmp/.org.chromium.Chromium.* /tmp/org.chromium.Chromium.* 2>/dev/null || true
+
+    # 4. Clean Firefox locks
     rm -f "${TARGET_HOME}/.mozilla/firefox/"*/*.lock 2>/dev/null || true
     rm -f "${TARGET_HOME}/.mozilla/firefox/"*/.parentlock 2>/dev/null || true
+    rm -f /root/.mozilla/firefox/*/*.lock 2>/dev/null || true
+    rm -f /root/.mozilla/firefox/*/.parentlock 2>/dev/null || true
+
+    # 5. Fix permissions if root ran before (restore ownership to desktop user)
+    if [[ -n "$TARGET_USER" && "$TARGET_USER" != "root" && "$EUID" -eq 0 ]]; then
+        chown -R "${TARGET_USER}:${TARGET_USER}" "${TARGET_HOME}/.config/google-chrome" 2>/dev/null || true
+        chown -R "${TARGET_USER}:${TARGET_USER}" "${TARGET_HOME}/.config/chromium" 2>/dev/null || true
+        chown -R "${TARGET_USER}:${TARGET_USER}" "${TARGET_HOME}/.mozilla" 2>/dev/null || true
+    fi
 }
 
 # ------------------------------------------------------------------------------
