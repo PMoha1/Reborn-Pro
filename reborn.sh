@@ -37,11 +37,16 @@ C_MAGENTA="\e[35m"
 C_CYAN="\e[36m"
 C_WHITE="\e[37m"
 
-CONFIG_DIR="/home/moha/.config/reborn"
+TARGET_USER="${SUDO_USER:-$USER}"
+TARGET_HOME=$(getent passwd "$TARGET_USER" 2>/dev/null | cut -d: -f6)
+if [[ -z "$TARGET_HOME" || ! -d "$TARGET_HOME" ]]; then
+    TARGET_HOME="${HOME:-/root}"
+fi
+CONFIG_DIR="${TARGET_HOME}/.config/reborn"
 BASELINE_FILE="${CONFIG_DIR}/original_baseline.conf"
 NM_CONF_FILE="/etc/NetworkManager/conf.d/90-mac-randomization.conf"
 
-mkdir -p "$CONFIG_DIR"
+mkdir -p "$CONFIG_DIR" 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
 # Helper: Check Root / Sudo
@@ -54,15 +59,22 @@ run_root() {
     fi
 }
 
+set_ttl() {
+    local ttl_val="$1"
+    run_root sysctl -w "net.ipv4.ip_default_ttl=${ttl_val}" >/dev/null 2>&1 || true
+}
+
 # ------------------------------------------------------------------------------
 # Helper: Fix Browser Singleton Locks (Crucial after hostname changes)
 # ------------------------------------------------------------------------------
 fix_browser_locks() {
-    rm -f /home/moha/.config/google-chrome/Singleton* 2>/dev/null || true
-    rm -f /home/moha/.config/chromium/Singleton* 2>/dev/null || true
-    rm -f /home/moha/.config/BraveSoftware/Brave-Browser/Singleton* 2>/dev/null || true
-    rm -f /home/moha/.config/microsoft-edge/Singleton* 2>/dev/null || true
+    rm -f "${TARGET_HOME}/.config/google-chrome/Singleton*" 2>/dev/null || true
+    rm -f "${TARGET_HOME}/.config/chromium/Singleton*" 2>/dev/null || true
+    rm -f "${TARGET_HOME}/.config/BraveSoftware/Brave-Browser/Singleton*" 2>/dev/null || true
+    rm -f "${TARGET_HOME}/.config/microsoft-edge/Singleton*" 2>/dev/null || true
     rm -rf /tmp/com.google.Chrome.* 2>/dev/null || true
+    rm -f "${TARGET_HOME}/.mozilla/firefox/"*/*.lock 2>/dev/null || true
+    rm -f "${TARGET_HOME}/.mozilla/firefox/"*/.parentlock 2>/dev/null || true
 }
 
 # ------------------------------------------------------------------------------
@@ -114,7 +126,7 @@ ORIGINAL_DEV="${ACTIVE_DEV}"
 ORIGINAL_CON="${ACTIVE_CON}"
 SAVED_AT="$(date "+%Y-%m-%d %H:%M:%S")"
 EOF
-        chown moha:moha "$BASELINE_FILE" 2>/dev/null || true
+        chown "${TARGET_USER}:${TARGET_USER}" "$BASELINE_FILE" 2>/dev/null || true
     fi
 }
 
@@ -168,6 +180,22 @@ apply_network_identity() {
     # 1. Update System Hostname
     echo -e "${C_BLUE}▸ [1/5] تغيير اسم مضيف النظام (System Hostname)...${C_RESET}"
     run_root hostnamectl set-hostname "$new_name"
+
+    # 1.1 Adjust TTL (OS Fingerprint Evasion for MikroTik / NAC)
+    case "$persona_desc" in
+        *Windows*)
+            echo -e "${C_BLUE}▸ [1.5/5] مطابقة قيمة TTL إلى 128 (محاكاة بصمة ويندوز الصادرة لتمويه ميكروتك)...${C_RESET}"
+            set_ttl 128
+            ;;
+        *Apple*|*iPhone*|*iPad*|*Android*|*Samsung*)
+            echo -e "${C_BLUE}▸ [1.5/5] مطابقة قيمة TTL إلى 64 (محاكاة بصمة الهاتف/التابلت)...${C_RESET}"
+            set_ttl 64
+            ;;
+        *)
+            echo -e "${C_BLUE}▸ [1.5/5] مطابقة قيمة TTL إلى 128 (Windows Stealth Default)...${C_RESET}"
+            set_ttl 128
+            ;;
+    esac
 
     # Update /etc/hosts to keep sudo & local resolution instant
     echo -e "${C_BLUE}▸ [2/5] تحديث ملف المضيفين (/etc/hosts)...${C_RESET}"
@@ -256,8 +284,10 @@ clean_browser_footprints() {
     # Purge Singleton Locks to guarantee Chrome will open under new hostname
     fix_browser_locks
 
-    local chrome_dir="/home/moha/.config/google-chrome"
-    local chrome_cache="/home/moha/.cache/google-chrome"
+    local chrome_dir="${TARGET_HOME}/.config/google-chrome"
+    local chrome_cache="${TARGET_HOME}/.cache/google-chrome"
+    local ff_dir="${TARGET_HOME}/.mozilla/firefox"
+    local ff_cache="${TARGET_HOME}/.cache/mozilla/firefox"
 
     # 1. Purge Crash Reports & Telemetry UUIDs
     if [[ -d "${chrome_dir}/Crash Reports" ]]; then
@@ -280,10 +310,18 @@ clean_browser_footprints() {
         echo -e "  ${C_GREEN}✔${C_RESET} تم حذف كاشات الـ GPU ومخلفات HSTS Supercookies."
     fi
 
-    # 3. Clean Thumbnail & Shader caches
-    rm -rf /home/moha/.cache/thumbnails/* 2>/dev/null || true
-    rm -rf /home/moha/.cache/mesa_shader_cache/* 2>/dev/null || true
-    rm -f /home/moha/.local/share/recently-used.xbel 2>/dev/null || true
+    # 3. Clean Firefox profile caches if present
+    if [[ -d "$ff_dir" ]]; then
+        rm -rf "$ff_cache"/* 2>/dev/null || true
+        find "$ff_dir" -name "sessionstore.jsonlz4" -delete 2>/dev/null || true
+        find "$ff_dir" -name "recovery.jsonlz4" -delete 2>/dev/null || true
+        echo -e "  ${C_GREEN}✔${C_RESET} تم تفريغ كاشات وجلسات متصفح فيرفوكس (Firefox)."
+    fi
+
+    # 4. Clean Thumbnail & Shader caches
+    rm -rf "${TARGET_HOME}/.cache/thumbnails"/* 2>/dev/null || true
+    rm -rf "${TARGET_HOME}/.cache/mesa_shader_cache"/* 2>/dev/null || true
+    rm -f "${TARGET_HOME}/.local/share/recently-used.xbel" 2>/dev/null || true
 
     # Final lock cleanup
     fix_browser_locks
@@ -364,8 +402,9 @@ restore_baseline() {
     echo -e "  • الماك الأصلي:  ${C_CYAN}${ORIGINAL_HARDWARE_MAC}${C_RESET}"
     echo -e "${C_YELLOW}═════════════════════════════════════════════════════════════════${C_RESET}"
 
-    # Restore Hostname
+    # Restore Hostname & Default TTL
     run_root hostnamectl set-hostname "$ORIGINAL_HOSTNAME"
+    set_ttl 64
     run_root sed -i -E "s/127\.0\.0\.1\s+localhost.*/127.0.0.1 localhost ${ORIGINAL_HOSTNAME} WARP 95.33.168.37 dns gateway cloudflare-warp/" /etc/hosts 2>/dev/null || true
 
     # Fix browser locks for restored hostname
@@ -424,6 +463,13 @@ show_status_dashboard() {
     printf "${C_CYAN}│${C_RESET} %-25s : ${C_BOLD}${C_YELLOW}%-32s${C_RESET} ${C_CYAN}│${C_RESET}\n" "🛡️ عنوان الماك (MAC)" "$CURRENT_MAC"
     printf "${C_CYAN}│${C_RESET} %-25s : ${C_DIM}%-32s${C_RESET} ${C_CYAN}│${C_RESET}\n" "🏭 مصنع كرت الشبكة (Vendor)" "$vendor"
     printf "${C_CYAN}│${C_RESET} %-25s : ${C_BOLD}${C_GREEN}%-32s${C_RESET} ${C_CYAN}│${C_RESET}\n" "🌐 عنوان الآي بي (IPv4)" "$CURRENT_IP"
+    local current_ttl
+    current_ttl=$(cat /proc/sys/net/ipv4/ip_default_ttl 2>/dev/null || echo "64")
+    local ttl_desc="Linux (64)"
+    if [[ "$current_ttl" -eq 128 ]]; then
+        ttl_desc="Windows Stealth (128)"
+    fi
+    printf "${C_CYAN}│${C_RESET} %-25s : ${C_BOLD}${C_YELLOW}%-32s${C_RESET} ${C_CYAN}│${C_RESET}\n" "⏱️ بصمة الـ TTL الشبكية" "$current_ttl ($ttl_desc)"
     printf "${C_CYAN}│${C_RESET} %-25s : %-32s ${C_CYAN}│${C_RESET}\n" "📡 شبكة الواي فاي الحالية" "${ACTIVE_CON:-None} (${ACTIVE_DEV:-None})"
     printf "${C_CYAN}│${C_RESET} %-25s : ${C_DIM}%-32s${C_RESET} ${C_CYAN}│${C_RESET}\n" "🔑 معرف النظام (Machine ID)" "${CURRENT_MACHINE_ID:0:16}..."
     printf "${C_CYAN}│${C_RESET} %-25s : %-41b ${C_CYAN}│${C_RESET}\n" "⚙️ التمويه الدائم التلقائي" "$perm_rand_status"
