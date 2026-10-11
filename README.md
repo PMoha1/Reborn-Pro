@@ -39,19 +39,15 @@ reborn
 
 ---
 
-## 🎬 استوديو العرض التفاعلي الحي (Interactive Web Showcase Studio)
+## 🎬 الشرح المرئي والاستوديو التفاعلي (Walkthrough & Interactive Demo)
 
-تم إدراج استوديو عرض سينمائي تفاعلي كامل يدعم اللغتين العربية والإنجليزية:
-* 🌐 **استوديو العرض التفاعلي الثنائي اللغة (Interactive Showcase):**  
-  يمكنك فتح ملف العرض في أي متصفح واستعراض الخيارات الـ 9 وتجربة الهويات (طابعة، تلفزيون، ويندوز 11) باللغتين العربية والإنجليزية مع إمكانية تشغيل الجولة السينمائية التلقائية:  
-  [🌐 فتح الاستوديو التفاعلي: demo_showcase.html](demo_showcase.html)
-
----
-
-## 🎥 الفيديو الاستعراضي التوضيحي الرسمي (Official Video Walkthrough)
-
-تم إنتاج فيديو استعراضي سينمائي متكامل بدقة **1080p Full HD** وبصوت فائق الحماس يشرح أسباب كشف أجهزة لينكس وكيف تقوم Reborn-Pro بالتخفي كهوية طابعة أو شاشة ذكية وتجاوز ميكروتك عبر المتجهات الـ 9:
-* 📺 **مشاهدة الفيديو الماستر مباشرة:** [`Reborn_Pro_Master_Walkthrough.mp4`](Reborn_Pro_Master_Walkthrough.mp4)
+<div align="center">
+  <p>
+    <a href="https://youtube.com/@PMoha1"><img src="https://img.shields.io/badge/YouTube-Watch%20Walkthrough-FF0000?style=for-the-badge&logo=youtube&logoColor=white" /></a>
+    <a href="demo_showcase.html"><img src="https://img.shields.io/badge/Studio-Interactive%20Demo-00f2fe?style=for-the-badge&logo=html5&logoColor=white" /></a>
+  </p>
+  <p><i>📺 شاهد فيديو الشرح الكامل على يوتيوب | 🌐 وافتح ملف <a href="demo_showcase.html"><b>demo_showcase.html</b></a> لتجربة محاكاة الهويات التفاعلية بالصوت (عربي / English)</i></p>
+</div>
 
 ---
 
