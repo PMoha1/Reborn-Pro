@@ -59,6 +59,23 @@ run_root() {
     fi
 }
 
+launch_default_browser() {
+    local target_url="${1:-}"
+    if command -v google-chrome &>/dev/null; then
+        nohup google-chrome ${target_url:+"$target_url"} >/dev/null 2>&1 &
+    elif command -v chromium &>/dev/null; then
+        nohup chromium ${target_url:+"$target_url"} >/dev/null 2>&1 &
+    elif command -v firefox-esr &>/dev/null; then
+        nohup firefox-esr ${target_url:+"$target_url"} >/dev/null 2>&1 &
+    elif command -v firefox &>/dev/null; then
+        nohup firefox ${target_url:+"$target_url"} >/dev/null 2>&1 &
+    elif command -v brave &>/dev/null; then
+        nohup brave ${target_url:+"$target_url"} >/dev/null 2>&1 &
+    elif command -v x-www-browser &>/dev/null; then
+        nohup x-www-browser ${target_url:+"$target_url"} >/dev/null 2>&1 &
+    fi
+}
+
 set_ttl() {
     local ttl_val="$1"
     run_root sysctl -w "net.ipv4.ip_default_ttl=${ttl_val}" >/dev/null 2>&1 || true
@@ -199,7 +216,11 @@ apply_network_identity() {
 
     # Update /etc/hosts to keep sudo & local resolution instant
     echo -e "${C_BLUE}▸ [2/5] تحديث ملف المضيفين (/etc/hosts)...${C_RESET}"
-    run_root sed -i -E "s/127\.0\.0\.1\s+localhost.*/127.0.0.1 localhost ${new_name} WARP 95.33.168.37 dns gateway cloudflare-warp/" /etc/hosts 2>/dev/null || true
+    if grep -qE "^127\.0\.0\.1\s+localhost" /etc/hosts; then
+        run_root sed -i -E "s/^127\.0\.0\.1\s+localhost.*/127.0.0.1 localhost ${new_name}/" /etc/hosts 2>/dev/null || true
+    else
+        echo "127.0.0.1 localhost ${new_name}" | run_root tee -a /etc/hosts >/dev/null
+    fi
 
     # Immediately clear browser SingletonLocks because hostname changed
     fix_browser_locks
@@ -273,13 +294,15 @@ reset_machine_id() {
 clean_browser_footprints() {
     echo -e "\n${C_MAGENTA}▸ تطهير بصمات المتصفح والتطبيقات...${C_RESET}"
 
-    # Close Chrome if running
-    if pgrep -f "/opt/google/chrome/chrome" >/dev/null 2>&1; then
-        echo -e "${C_YELLOW}⚠ إغلاق متصفح كروم لتفريغ البصمات والأقفال...${C_RESET}"
-        pkill -15 -f "/opt/google/chrome/chrome" 2>/dev/null || true
-        sleep 1
-        pkill -9 -f "/opt/google/chrome/chrome" 2>/dev/null || true
-    fi
+    # Close active browsers if running
+    for b_proc in chrome google-chrome chromium firefox firefox-esr brave; do
+        if pgrep -x "$b_proc" >/dev/null 2>&1 || pgrep -f "$b_proc" >/dev/null 2>&1; then
+            echo -e "${C_YELLOW}⚠ إغلاق المتصفح ($b_proc) لتفريغ البصمات والأقفال...${C_RESET}"
+            pkill -15 -x "$b_proc" 2>/dev/null || true
+            sleep 0.5
+            pkill -9 -x "$b_proc" 2>/dev/null || true
+        fi
+    done
 
     # Purge Singleton Locks to guarantee Chrome will open under new hostname
     fix_browser_locks
@@ -405,7 +428,9 @@ restore_baseline() {
     # Restore Hostname & Default TTL
     run_root hostnamectl set-hostname "$ORIGINAL_HOSTNAME"
     set_ttl 64
-    run_root sed -i -E "s/127\.0\.0\.1\s+localhost.*/127.0.0.1 localhost ${ORIGINAL_HOSTNAME} WARP 95.33.168.37 dns gateway cloudflare-warp/" /etc/hosts 2>/dev/null || true
+    if grep -qE "^127\.0\.0\.1\s+localhost" /etc/hosts; then
+        run_root sed -i -E "s/^127\.0\.0\.1\s+localhost.*/127.0.0.1 localhost ${ORIGINAL_HOSTNAME}/" /etc/hosts 2>/dev/null || true
+    fi
 
     # Fix browser locks for restored hostname
     fix_browser_locks
@@ -559,11 +584,11 @@ full_reborn() {
     echo -e "\n${C_GREEN}${C_BOLD}✨ تم اكتمال عملية الولادة الجديدة الشاملة (Full Reborn)!${C_RESET}"
     echo -e "${C_CYAN}جهازك الآن يظهر للراوتر ولكل من في الشبكة كجهاز جديد تماماً لم يدخل الشبكة من قبل.${C_RESET}\n"
 
-    echo -ne "${C_YELLOW}هل تريد فتح متصفح كروم الآن بهويتك الجديدة؟ [Y/n]: ${C_RESET}"
+    echo -ne "${C_YELLOW}هل تريد فتح المتصفح الآن بهويتك الجديدة؟ [Y/n]: ${C_RESET}"
     read -r launch_ans
     if [[ -z "$launch_ans" || "$launch_ans" =~ ^[Yy]$ ]]; then
-        echo -e "${C_GREEN}🚀 جارٍ تشغيل متصفح كروم...${C_RESET}"
-        nohup google-chrome >/dev/null 2>&1 &
+        echo -e "${C_GREEN}🚀 جارٍ تشغيل المتصفح...${C_RESET}"
+        launch_default_browser
         sleep 1
     fi
 }
@@ -677,7 +702,7 @@ EOF
             8)
                 fix_browser_locks
                 echo -e "${C_GREEN}✔ Browser locks removed! Ready to launch / تم فك أقفال المتصفح بنجاح، جاهز للفتح الآن.${C_RESET}"
-                nohup google-chrome >/dev/null 2>&1 &
+                launch_default_browser
                 ;;
             9) toggle_static_stealth ;;
             0) echo -e "\n${C_GREEN}في أمان الله!${C_RESET}\n"; exit 0 ;;
