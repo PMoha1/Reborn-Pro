@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reborn-Pro ⚡ Ghost Identity Demo Video Showcase</title>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --term-bg: #0f141d;
+      --cyan: #00f2fe;
+      --magenta: #ff007f;
+      --green: #00ff88;
+      --yellow: #ffd000;
+      --red: #ff3366;
+      --text: #e6f1ff;
+      --dim: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    .header-bar {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 0 10px;
+    }
+    .title {
+      font-size: 1.2rem;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid var(--cyan);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .terminal-container {
+      width: 100%;
+      max-width: 900px;
+      background: var(--term-bg);
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 242, 254, 0.15);
+      border: 1px solid #1e293b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .term-header {
+      background: #151b26;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot.red { background: #ff5f56; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #27c93f; }
+    .term-title {
+      flex: 1;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--dim);
+      font-weight: 600;
+    }
+    .term-body {
+      padding: 24px;
+      height: 480px;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #94a3b8;
+      text-align: left;
+      direction: ltr;
+    }
+    .prompt { color: var(--magenta); font-weight: bold; }
+    .cmd { color: var(--green); }
+    .cyan { color: var(--cyan); }
+    .yellow { color: var(--yellow); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .dim { color: var(--dim); }
+    .bold { font-weight: bold; }
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 16px;
+      background: var(--cyan);
+      vertical-align: text-bottom;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .control-panel {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 242, 254, 0.4);
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+      box-shadow: none;
+    }
+    .status-card {
+      margin-top: 15px;
+      padding: 12px 20px;
+      background: rgba(0, 255, 136, 0.05);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 8px;
+      color: var(--green);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div class="title">
+      <span>👻 Reborn-Pro</span>
+      <span class="badge">Live Automated Video Demo</span>
+    </div>
+    <div class="badge" style="color: var(--yellow); border-color: var(--yellow);">
+      MikroTik Evasion Engine
+    </div>
+  </div>
+
+  <div class="terminal-container">
+    <div class="term-header">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+      <div class="term-title">kali@DESKTOP-PC10: ~ (Reborn-Pro Evasion Demo)</div>
+    </div>
+    <div class="term-body" id="termBody">
+      <div id="lines"></div>
+      <span class="cursor" id="cursor"></span>
+    </div>
+  </div>
+
+  <div class="control-panel">
+    <button class="btn" onclick="startAutomatedDemo()">▶️ تشغيل العرض التوضيحي التلقائي (Play Demo)</button>
+    <button class="btn btn-secondary" onclick="resetDemo()">🔄 إعادة تعيين (Reset)</button>
+  </div>
+
+  <div class="status-card" id="statusCard">
+    🎬 اضغط على "تشغيل العرض التوضيحي" وسيقوم النظام بمحاكاة سحر التخفي من الميكروتك تلقائياً أمامك!
+  </div>
+
+  <script>
+    const term = document.getElementById('lines');
+    const status = document.getElementById('statusCard');
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function printLine(text, delay = 50) {
+      const line = document.createElement('div');
+      term.appendChild(line);
+      for (let char of text) {
+        line.innerHTML += char;
+        await sleep(delay);
+      }
+      document.getElementById('termBody').scrollTop = document.getElementById('termBody').scrollHeight;
+    }
+
+    async function printImmediate(html) {
+      const line = document.createElement('div');
+      line.innerHTML = html;
+      term.appendChild(line);
+      document.getElementById('termBody').scrollTop = document.getElementById('termBody').scrollHeight;
+    }
+
+    async function resetDemo() {
+      term.innerHTML = '';
+      status.innerText = '🎬 جاهز للتسجيل أو العرض.';
+    }
+
+    async function startAutomatedDemo() {
+      resetDemo();
+      status.innerText = '⚡ جارٍ تشغيل السيناريو التوضيحي لـ Reborn-Pro...';
+
+      // 1. One liner command
+      await printLine('<span class="prompt">kali@kali:~$ </span><span class="cmd">curl -sSL https://git.io/reborn | sudo bash</span>', 30);
+      await sleep(600);
+
+      // 2. Banner
+      await printImmediate(`
+<span class="magenta bold">
+  ██████╗ ███████╗██████╗  ██████╗ ██████╗ ███╗   ██╗
+  ██╔══██╗██╔════╝██╔══██╗██╔═══██╗██╔══██╗████╗  ██║
+  ██████╔╝█████╗  ██████╔╝██║   ██║██████╔╝██╔██╗ ██║
+  ██╔══██╗██╔══╝  ██╔══██╗██║   ██║██╔══██╗██║╚██╗██║
+  ██║  ██║███████╗██████╔╝╚██████╔╝██║  ██║██║ ╚████║
+  ╚═╝  ╚═╝╚══════╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝
+</span>
+<span class="dim">  — HackerAI Anti-Fingerprint & Ghost Engine (Universal Edition) —</span>
+      `);
+      await sleep(800);
+
+      // 3. Status Dashboard (Before)
+      await printImmediate(`
+<span class="cyan">┌───────────────────────────────────────────────────────────────┐</span>
+<span class="cyan">│</span> <span class="magenta bold">⚡ كشف البصمات الحالية (كما يراها راوتر ميكروتك الآن) ⚡</span>         <span class="cyan">│</span>
+<span class="cyan">├───────────────────────────────────────────────────────────────┤</span>
+<span class="cyan">│</span> 🖥️ اسم الجهاز في الراوتر : <span class="red bold">kali [محظور في الميكروتك]</span>           <span class="cyan">│</span>
+<span class="cyan">│</span> 🛡️ عنوان الماك (MAC)    : <span class="yellow">00:0c:29:4f:8e:12</span>                 <span class="cyan">│</span>
+<span class="cyan">│</span> 🌐 عنوان الآي بي        : <span class="dim">192.168.88.45</span>                     <span class="cyan">│</span>
+<span class="cyan">│</span> ⏱️ بصمة الـ TTL الشبكية  : <span class="red bold">64 (Linux Default - مكشوف!)</span>        <span class="cyan">│</span>
+<span class="cyan">└───────────────────────────────────────────────────────────────┘</span>
+      `);
+      await sleep(1000);
+
+      status.innerText = '🎭 اختيار هوية ويندوز لتجاوز الفلاتر (Windows 11 Persona)...';
+      await printLine('<span class="yellow bold">اختر العملية [1-9]: </span><span class="green bold">1 (Full Reborn)</span>', 50);
+      await sleep(500);
+
+      await printLine('<span class="cyan bold">اختر الهوية المطلوبة [1-8]: </span><span class="green bold">4 (Windows 11 Laptop)</span>', 50);
+      await sleep(600);
+
+      // 4. Execution steps
+      await printImmediate(`
+<span class="cyan">═════════════════════════════════════════════════════════════════</span>
+<span class="magenta bold">⚡ جارٍ تطبيق الهوية الجديدة على الشبكة: </span><span class="yellow bold">DESKTOP-9B4X2L1</span> <span class="dim">(Windows 11 PC)</span>
+<span class="cyan">═════════════════════════════════════════════════════════════════</span>
+<span class="cyan">▸ [1/5] تغيير اسم مضيف النظام (Hostname) إلى DESKTOP-9B4X2L1...</span>
+<span class="green">▸ [1.5/5] مطابقة قيمة TTL إلى 128 (محاكاة حزم ويندوز الصادرة لتمويه ميكروتك)... ✔</span>
+<span class="cyan">▸ [2/5] تحديث ملف المضيفين (/etc/hosts)... ✔</span>
+<span class="cyan">▸ [3/5] حقن ماك إنتل معتمد (00:1B:77:E4:19:A2) في الكرت... ✔</span>
+<span class="cyan">▸ [4/5] حقن اسم التمويه في طلب الـ DHCP وتفعيل خصوصية IPv6... ✔</span>
+<span class="cyan">▸ [5/5] تفريغ كاش الـ DNS ومسح أقفال المتصفح (Browser Locks)... ✔</span>
+<span class="yellow">⟳ تجديد الاتصال بالراوتر لسحب IP جديد تماماً...</span>
+      `);
+      await sleep(1200);
+
+      // 5. Final Result
+      await printImmediate(`
+<span class="green bold">✔ تم بنجاح! النتيجة الظاهرة لراوتر ميكروتك الآن:</span>
+  • اسم الجهاز في الراوتر: <span class="green bold">DESKTOP-9B4X2L1</span> (ويندوز أصلي)
+  • عنوان الماك (MAC):     <span class="yellow bold">00:1B:77:E4:19:A2</span> (Intel Corp)
+  • بصمة الـ TTL الشبكية:  <span class="green bold">128</span> (مطابقة كاملة لـ Windows 11)
+  • الآي بي الجديد:        <span class="green bold">192.168.88.109</span> (عقد جديد بدون حظر)
+  • حالة المرور:           <span class="green bold">✔ مسموح (BYPASSED & UNLOCKED)</span>
+      `);
+
+      status.innerText = '🎉 اكتمل العرض! تم محاكاة العملية بنجاح لتسجيل الفيديو.';
+    }
+  </script>
+</body>
+</html>
