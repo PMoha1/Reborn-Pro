@@ -62,7 +62,8 @@ reborn
 | **Arch Linux / CachyOS** | مدعوم أصلياً 100% ✅ | متوافق مع كافة بيئات سطح المكتب وأدوات NetworkManager |
 | **Debian / Ubuntu / Mint** | مدعوم أصلياً 100% ✅ | مسار ديناميكي لمجلدات المستخدم وإعدادات الـ IP |
 | **Fedora / RHEL** | مدعوم أصلياً 100% ✅ | تطابق كامل مع أوامر `hostnamectl` و `nmcli` |
-| **Termux (Android Root)** | مدعوم للعمليات المحمولة ✅ | يتطلب صلاحيات Root لتغيير واجهات الشبكة |
+| **Android (Termux / PRoot / Non-Root)** | مدعوم رسمياً بدون روت (Knox 0x0 Safe) ✅ | يدعم أندرويد 11-14 عبر Shizuku / ADB Local Loopback وبيئات Kali/Debian PRoot |
+| **Termux (Native)** | مدعوم للعمليات المحمولة ✅ | يعمل عبر `reborn-android.sh` وربط الـ ADB المحلي |
 | **Windows (WSL / Git Bash)** | مدعوم جزئياً ✅ | تم توفير نسخة مخصصة كاملة في مستودع Reborn-Windows |
 
 ---
@@ -80,6 +81,29 @@ reborn
 7. 🛡️ **التمويه التلقائي الدائم (Auto-Random MAC):** إجبار NetworkManager على توليد ماك عشوائي جديد عند كل اتصال بأي شبكة لاسلكية.
 8. 🔄 **استعادة الهوية الأصلية (Restore Factory Baseline):** العودة لنقطة الصفر واسترجاع الماك والاسم الأصليين للجهاز.
 9. 👻 **وضع الشبح الثابت (Static IP Stealth - تجاوز الـ DHCP):** إيقاف بروتوكول الـ DHCP كلياً، وتثبيت آي بي صامت لتجاوز التسجيل في جداول الـ Lease Table الخاصة بالراوتر.
+
+---
+
+## 📱 محرك أندرويد المعزول وبدون روت (Reborn Android Rootless Engine)
+
+تم كسر قيود أجهزة أندرويد الحديثة (Android 11 - 14) وأجهزة **Samsung Knox 0x0** ذات البوتلودر المغلق عبر سكربت `reborn-android.sh`:
+
+- **لا حاجة للروت (No Root Required):** يعمل المحرك بالكامل عبر منفذ **ADB Local Loopback (`127.0.0.1:5555`)** أو عبر خدمة **Shizuku**.
+- **دعم بيئات Linux المعزولة (PRoot):** متوافق 100% مع بيئات **Debian PRoot** و **Kali NetHunter Rootless** داخل تطبيق Termux.
+- **توليد هوية عتادية وشبكية كاملة:**
+  - تبديل عنوان الماك الفيزيائي (Randomized L2 MAC).
+  - تزييف اسم الجهاز في الـ DHCP والبلوتوث (Decoy Device Profiles: iPhone 15 Pro, S24 Ultra, Pixel 8 Pro).
+  - تدوير معرّف أندرويد العالمي (SSAID / Android ID).
+  - إعادة تدوير كرت الوايفاي وسحب IP جديد من سيرفر الـ DHCP تلقائياً.
+
+### 📥 التشغيل داخل أندرويد / Termux / PRoot:
+```bash
+# تشغيل أداة الولادة من جديد وتغيير الهوية:
+reborn
+
+# أو عرض لوحة معلومات الهوية الحالية:
+reborn status
+```
 
 ---
 
