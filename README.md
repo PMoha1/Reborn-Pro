@@ -4,6 +4,7 @@
   <p><i>Architected for Elite Red Teaming & Anti-Fingerprint Operations by <a href="https://github.com/PMoha1">PMoha1</a></i></p>
 
   <p>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge" /></a>
     <img src="https://img.shields.io/badge/OS-Linux%20%7C%20Kali%20%7C%20Arch%20%7C%20Ubuntu-1793D1?style=for-the-badge&logo=linux&logoColor=white" />
     <img src="https://img.shields.io/badge/Kali_Linux-Verified-557C94?style=for-the-badge&logo=kalilinux&logoColor=white" />
     <img src="https://img.shields.io/badge/Arch_Linux-Verified-1793D1?style=for-the-badge&logo=archlinux&logoColor=white" />
@@ -114,6 +115,19 @@ reborn status
 
 **الحل المدمج في Reborn-Pro (الخيار 8):**  
 يقوم المحرك بالبحث في الطبقات العميقة للنظام وتدمير كافة ملفات الأقفال فورياً وإعادة إنعاش المتصفح ليعمل فوراً دون الحاجة لإعادة تشغيل النظام، مما يضمن استمرارية العمليات الأمنية بدون انقطاع.
+
+---
+
+## 📜 الترخيص وحفظ الملكية الفكرية (License & Copyright)
+
+هذا المشروع مرخص بموجب **Apache License 2.0**.
+
+> ⚠️ **إشعار الملكية الفكرية والحماية القانونية:**
+> - تم ابتكار وهندسة وبناء محرك **Reborn-Pro** حصرياً بواسطة **محمد يقين (PMoha1)**.
+> - يُمنع منعاً باتاً نزع اسم المطور الأصلي أو إعادة تسمية المشروع ونسبه لغير صاحبه.
+> - يُسمح بالاستخدام والتطوير والبحث الأمني المشروع تحت شروط رخصة أباتشي 2.0 مع الإبقاء على إشعار الحقوق الأصلي.
+
+**Copyright (c) 2026 Mohammed Yaqeen (PMoha1). All Rights Reserved.**
 
 ---
 
