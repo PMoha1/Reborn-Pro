@@ -63,7 +63,7 @@ reborn
 | **Arch Linux / CachyOS** | مدعوم أصلياً 100% ✅ | متوافق مع كافة بيئات سطح المكتب وأدوات NetworkManager |
 | **Debian / Ubuntu / Mint** | مدعوم أصلياً 100% ✅ | مسار ديناميكي لمجلدات المستخدم وإعدادات الـ IP |
 | **Fedora / RHEL** | مدعوم أصلياً 100% ✅ | تطابق كامل مع أوامر `hostnamectl` و `nmcli` |
-| **Android (Termux / PRoot / Non-Root)** | مدعوم رسمياً بدون روت (Knox 0x0 Safe) ✅ | يدعم أندرويد 11-14 عبر Shizuku / ADB Local Loopback وبيئات Kali/Debian PRoot |
+| **Android (Root Magisk/KernelSU & Rootless)** | مدعوم بالكامل (Root + Knox 0x0 Safe) ✅ | يدعم أندرويد 11–17 مع كشف تلقائي لصلاحيات الـ Root (`su`) أو وضع بدون روت (Shizuku / ADB) وبيئات Termux / PRoot |
 | **Termux (Native)** | مدعوم للعمليات المحمولة ✅ | يعمل عبر `reborn-android.sh` وربط الـ ADB المحلي |
 | **Windows (WSL / Git Bash)** | مدعوم جزئياً ✅ | تم توفير نسخة مخصصة كاملة في مستودع Reborn-Windows |
 
@@ -85,25 +85,34 @@ reborn
 
 ---
 
-## 📱 محرك أندرويد المعزول وبدون روت (Reborn Android Rootless Engine)
+## 📱 محرك أندرويد الموحد للهواتف المروتة وبدون روت (Reborn Mobile v2.0 Engine)
 
-تم كسر قيود أجهزة أندرويد الحديثة (Android 11 - 14) وأجهزة **Samsung Knox 0x0** ذات البوتلودر المغلق عبر سكربت `reborn-android.sh`:
+تمت هندسة سكربت `reborn-android.sh` ليعمل بسلاسة في كلٍ من **الهواتف المروتة (Magisk / KernelSU / APatch)** كمحرك تخفٍ كامل يطابق نسخة اللابتوب، وكذلك في وضع **بدون روت (Knox 0x0 Safe)** عبر **ADB / Shizuku / Termux / PRoot**:
 
-- **لا حاجة للروت (No Root Required):** يعمل المحرك بالكامل عبر منفذ **ADB Local Loopback (`127.0.0.1:5555`)** أو عبر خدمة **Shizuku**.
-- **دعم بيئات Linux المعزولة (PRoot):** متوافق 100% مع بيئات **Debian PRoot** و **Kali NetHunter Rootless** داخل تطبيق Termux.
-- **توليد هوية عتادية وشبكية كاملة:**
-  - تبديل عنوان الماك الفيزيائي (Randomized L2 MAC).
-  - تزييف اسم الجهاز في الـ DHCP والبلوتوث (Decoy Device Profiles: iPhone 15 Pro, S24 Ultra, Pixel 8 Pro).
-  - تدوير معرّف أندرويد العالمي (SSAID / Android ID).
-  - إعادة تدوير كرت الوايفاي وسحب IP جديد من سيرفر الـ DHCP تلقائياً.
+- **كشف تلقائي ذكي للصلاحيات والبيئة:** يكتشف تلقائياً بيئة التشغيل (`WORKSTATION_REMOTE`, `ANDROID_NATIVE`, `TERMUX`, `PROOT_CONTAINER`) ويفعّل **وضع Root (`uid=0`)** تلقائياً عند توفر `su`.
+- **تبديل حقيقي للـ MAC وتجديد الـ DHCP IP (Root Engine):**
+  - استخراج بيانات الشبكة الحالية من `WifiConfigStore.xml` بأمان داخل ذاكرة الروت (Open / OWE / WPA2 / WPA3 مع حماية شبكات Enterprise).
+  - تدوير الماك الفعلي عبر إعادة التوثيق الديناميكي (`-r non_persistent`) وإجبار راوتر MikroTik على منح IP جديد وتخطي الحظر وإظهار بوابة الدخول فوراً.
+- **تطابق كامل مع قدرات اللابتوب في وضع Root:**
+  - حقن هوية الـ DHCP (`net.hostname` عبر `resetprop` + `device_name` + `bluetooth_name`).
+  - تزييف بصمة مكدس الشبكة **TCP/IP TTL (`128` لويندوز / `64` لآبل وأندرويد)** لتضليل قواعد MikroTik Mangle/Filter.
+  - تطهير بصمات وكاشات المتصفحات (Chrome / Tor Browser / Brave / Firefox) مع الحفاظ على المفضلات.
+  - دعم **وضع الشبح الثابت (Static IP Stealth)**، تدوير `Android ID`، وحفظ واستعادة الهوية الأصلية (`restore`).
 
-### 📥 التشغيل داخل أندرويد / Termux / PRoot:
+### 📥 التشغيل على أندرويد (من اللابتوب عبر ADB أو داخل الجوال/Termux):
 ```bash
-# تشغيل أداة الولادة من جديد وتغيير الهوية:
-reborn
+# ولادة جديدة شاملة وتغيير الماك والآي بي والبصمات فوراً:
+./reborn-android.sh
 
-# أو عرض لوحة معلومات الهوية الحالية:
-reborn status
+# تحديد هوية مخصصة (مثال: بصمة ويندوز TTL=128):
+./reborn-android.sh --name DESKTOP-GHOST7
+
+# فتح القائمة التفاعلية الكاملة أو عرض لوحة الحالة:
+./reborn-android.sh menu
+./reborn-android.sh status
+
+# استعادة الهوية الأصلية للجهاز:
+./reborn-android.sh restore
 ```
 
 ---
